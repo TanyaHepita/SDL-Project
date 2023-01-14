@@ -63,6 +63,7 @@ animal* get_target(SDL_Rect wolf, std::vector<animal*> storage) {
     animal *nearest = storage[0];
     for (auto target : storage) {
       if (target->get_type() == 's' && target->get_pv() == 1) {
+        std::cout << "nearest x = " << target->get_position().x << "\nnearest y = " << target->get_position().y << "\n";
         double diff_x = target->get_position().x - wolf.x;
         double diff_y = target->get_position().y - wolf.y;
         double dist = sqrt(diff_x*diff_x - diff_y*diff_y);
@@ -71,6 +72,7 @@ animal* get_target(SDL_Rect wolf, std::vector<animal*> storage) {
           nearest = target;
       }
     }
+    std::cout << "nearest x = " << nearest->get_point().x << "\nnearest y = " << nearest->get_point().y << "\n";
     return nearest;
 }
 
@@ -108,7 +110,7 @@ void animal::draw(){
 sheep::sheep(SDL_Surface* window_surface_ptr, char type) : animal(file_path_s, window_surface_ptr){
   this->type = type;
   this->point = get_random(point);
-  this->speed = 1.2;
+  this->speed = 1.5;
 }
 
 void sheep::move(std::vector<animal*> storage) {
@@ -136,21 +138,31 @@ void sheep::move(std::vector<animal*> storage) {
   }
 
   // If the animal touch the point, modify point position
-  if (this->position.x == get_point().x && this->position.y == get_point().y)
+  if (this->position.x == get_point().x && this->position.y == get_point().y) {
     this->point = get_random(this->point);
+  }
 }
 
-wolf::wolf(SDL_Surface* window_surface_ptr, char type) : animal(file_path_w, window_surface_ptr){
+wolf::wolf(SDL_Surface* window_surface_ptr, char type, std::vector<animal*> storage) : animal(file_path_w, window_surface_ptr){
   this->type = type;
   this->speed = 1;
+
+  animal *target = get_target(this->position, storage);
+  if (target->get_type() == 'w') {
+    this->point = get_random(this->point);
+    std::cout << "ok1\n";
+  }
+  else {
+    this->point = target->get_point();
+    std::cout << "x = " << target->get_point().x << "\ny = " << target->get_point().y << "\ntype = " << this->type;
+    std::cout << "ok2\n";
+    std::cout << "x = " << this->point.x << "\ny = " << this->point.y << "\ntype = " << this->type;
+  }
+  std::cout << "x = " << this->point.x << "\ny = " << this->point.y << "\ntype = " << this->type;
+
 }
 
 void wolf::move(std::vector<animal*> storage) {
-
-  animal *target = get_target(this->position, storage);
-  if (target->get_type() == 'w')
-    this->point = get_random(this->point);
-  this->point = target->get_point();
 
   // Compare animal position and point followed position
   if (this->point.x > this->position.x){
@@ -175,9 +187,10 @@ void wolf::move(std::vector<animal*> storage) {
   }
 
   // If the wolf touch a sheep, the sheep die and the wolf has a new target
-  if (this->position.x == this->point.x && this->position.y == this->point.y)
+  if (this->position.x == this->point.x && this->position.y == this->point.y) {
     death(this->point, storage);
     this->point = get_target(position, storage)->get_point();
+  }
 }
 
 ground::ground(SDL_Surface* window_surface_ptr) {
@@ -191,6 +204,9 @@ ground::~ground(){
   window_surface_ptr_ = nullptr;
 
   // Clear storage shared_ptr
+  for (auto target : storage) {
+    target->~animal();
+  }
   storage.clear();
 
   // Quit the Surface
@@ -204,7 +220,7 @@ void ground::add_animal(char type){
     this->storage.push_back(new sheep(window_surface_ptr_, 's'));
   }
   else {
-    this->storage.push_back(new wolf(window_surface_ptr_, 'w'));
+    this->storage.push_back(new wolf(window_surface_ptr_, 'w', storage));
   }
 } // Add an animal
 

@@ -77,7 +77,7 @@ public:
 // for sheep you can add the wolves
 class wolf : public animal {
 public:
-  wolf(SDL_Surface* window_surface_ptr, char type);
+  wolf(SDL_Surface* window_surface_ptr, char type, std::vector<animal*> storage);
   ~wolf(){}
   void move(std::vector<animal*> storage);
 };
